@@ -1,0 +1,4704 @@
+{
+  "name": "Telegram_flow",
+  "nodes": [
+    {
+      "parameters": {
+        "email": "={{ $json.userid + \"@telegram.com\"}}",
+        "phone": "=",
+        "additionalFields": {
+          "customFields": {
+            "values": [
+              {
+                "fieldId": {
+                  "__rl": true,
+                  "value": "First Name",
+                  "mode": "id"
+                },
+                "fieldValue": "={{ $json.firstName }}"
+              },
+              {
+                "fieldId": {
+                  "__rl": true,
+                  "value": "Last Name",
+                  "mode": "id"
+                },
+                "fieldValue": "={{ $json.lastName }}"
+              }
+            ]
+          },
+          "name": "={{ $json.firstName + \" \" + $json.lastName}}"
+        },
+        "requestOptions": {}
+      },
+      "id": "9f02a831-29d2-4997-9ffc-f9c52450dfef",
+      "name": "Get or Create Contact in GHL",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        208,
+        208
+      ],
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Your objective will be to analyse the anwer of a user and categorized him. \nThe user should have answer to \"Bonjour, as-tu actuellement un business ou cherches-tu a en lancer un ?\"\nYour objective is to understand if the user already have a business.\nIf he doesn't have a business you need to answer \"not qualified\". \nIf he have a business but it's a new one / fresh one you need to answer \"not qualified\". \nif he have a bnusiness and it's not a fresh one you need to answer \"qualified\".\n\nJust answer by \"qualified\" or \"not qualified\" no other text. Ensure that you don't add any special char or line break",
+              "role": "model"
+            },
+            {
+              "content": "=Complementary context, do not take care if empty, but prior it if fullfilled : \n- {{ $('Get agent complementary context').item.json.context }}\n- {{ $('Get agent complementary context').item.json.prompt }}",
+              "role": "model"
+            },
+            {
+              "content": "=Here is the user answer : {{ $('Extract message').item.json.text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        -848
+      ],
+      "id": "96b32460-da4d-4740-8c61-13759a4b1621",
+      "name": "Analysing compagny state",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f354a992-7454-4cfb-9952-e2755260cc23",
+              "leftValue": "={{ $json.content.parts[0].text.toLowerCase() }}",
+              "rightValue": "=\"qualified\"",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1664,
+        -848
+      ],
+      "id": "324042a0-5b18-4734-9f40-90aa6048a076",
+      "name": "is_qualified"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Your goal is to analyze a user's response and summarize it by keeping the important points in the question we have asked to him. \nYou summarize must be short sentences, no bullet points allowed. \nHere is the question that the user should answer at : \n\"Afin de mieux comprendre votre activité, pourriez-vous me préciser quelle est votre offre principale ou votre service phare ? \nQuel est le profil de votre client idéal ? \nJ’aimerais également savoir comment vous gérez actuellement vos leads et votre processus de prise de rendez-vous, ainsi que votre mode de délivrance : prestation « Done For You » (réalisée pour le client), « Done With You » (accompagnée) ou « Do It Yourself » (autonome).\"",
+              "role": "model"
+            },
+            {
+              "content": "=Complementary context, do not take care if empty, but prior it if fullfilled : \n- {{ $('Get agent complementary context').item.json.context }}\n- {{ $('Get agent complementary context').item.json.prompt }}",
+              "role": "model"
+            },
+            {
+              "content": "=Here is the user's response : {{ $('Extract message').item.json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        -496
+      ],
+      "id": "788d3deb-b5e2-4ed8-8744-d674ae2eedd3",
+      "name": "Analysing complementary info",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "23bb94c9-f966-4c50-95b4-1c929778e423",
+              "leftValue": "={{ $json.content.parts[0].text }}",
+              "rightValue": "\"no match\"",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        -208
+      ],
+      "id": "e1a63f29-3d46-46f8-b3e1-1b255d83a305",
+      "name": "is_matching"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get or Create Contact in GHL').item.json.id }}",
+        "updateFields": {
+          "tags": "company"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        -864
+      ],
+      "id": "da09ecec-0228-47af-a913-ada0d67f47b7",
+      "name": "Set company tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get or Create Contact in GHL').item.json.id }}",
+        "updateFields": {
+          "tags": "start"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        -1136
+      ],
+      "id": "d6b59da6-2b4d-49a2-bedb-62bb077754cb",
+      "name": "Set start tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "email": "={{ $('Get or Create Contact in GHL').item.json.email }}",
+        "additionalFields": {
+          "customFields": {
+            "values": [
+              {
+                "fieldId": {
+                  "__rl": true,
+                  "value": "kyCHjKMj52KR7qJXcwlO",
+                  "mode": "id"
+                },
+                "fieldValue": "={{ $('Analysing complementary info').item.json.content.parts[0].text }}"
+              }
+            ]
+          },
+          "tags": "complement_info"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        -496
+      ],
+      "id": "c10c3912-99fc-4bbe-816d-c406d117492a",
+      "name": "set complement_info tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get or Create Contact in GHL').item.json.id }}",
+        "updateFields": {
+          "tags": "book"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        80
+      ],
+      "id": "40068359-6e35-47d7-8eb1-8c1ba16f9dc9",
+      "name": "set book tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "email": "={{ $('Get or Create Contact in GHL').item.json.email }}",
+        "additionalFields": {
+          "customFields": {
+            "values": [
+              {
+                "fieldId": {
+                  "__rl": true,
+                  "value": "MGf5f7J2CqTo2R8lUhUE",
+                  "mode": "id"
+                },
+                "fieldValue": "={{(()=>{ \n  let url = $('Check if a video match the need').item.json.content.parts[0].text.replaceAll('\"', '');\n\n  let base = url.split('=')[0];\n  let video = url.split('=')[1];\n\n  video = encodeURIComponent(video);\n  full_url = base +'='+ video;\n  return full_url;\n})()}}"
+              }
+            ]
+          },
+          "tags": "video"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        -272
+      ],
+      "id": "41e4d57c-8f15-448a-8ca1-a790b3fcf05c",
+      "name": "set video tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Your objective will be to analyse the anwer of the user basing on all the context of the conversation. \nYou need to find the best video that fit the user thinking / need. \nDo not propose a video if there is no matching one. \n\nI want you to return ONLY the URL of the video you recommand. \nBe extremely carrefull on the URL restitution, no mistakes allowed on it.\nIf there is no recommandation return ONLY 'no match'.",
+              "role": "model"
+            },
+            {
+              "content": "=Complementary context, do not take care if empty, but prior it if fullfilled : \n- {{ $('Get agent complementary context').item.json.context }}\n- {{ $('Get agent complementary context').item.json.prompt }}",
+              "role": "model"
+            },
+            {
+              "content": "=List of videos : {{ $('Youtube Videos').item.json.videos }}"
+            },
+            {
+              "content": "=Conversation : \n - Question : \"Si vous ne deviez actionner qu'un seul levier\npour améliorer votre chiffre d'affaires, lequel\nchoisiriez-vous ?\"\n- Answer : {{ $('Telegram Trigger').item.json.message.text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        -208
+      ],
+      "id": "4a824e10-11cd-4f41-92f7-6c1581272e6b",
+      "name": "Check if a video match the need",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "19b014b7-ba96-4eb4-9966-229ea8f6b347",
+              "leftValue": "={{ $json.content.parts[0].text }}",
+              "rightValue": "\"yes\"",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1728,
+        176
+      ],
+      "id": "6eb0d723-0c5c-48ea-8f71-19641bb6856b",
+      "name": "is_interested_by_video"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get or Create Contact in GHL').item.json.id }}",
+        "updateFields": {
+          "tags": "investment"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        512
+      ],
+      "id": "8fb18235-1bd8-4881-8338-f5a8877f9278",
+      "name": "set investment tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "19b014b7-ba96-4eb4-9966-229ea8f6b347",
+              "leftValue": "={{ $json.content.parts[0].text }}",
+              "rightValue": "\"yes\"",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1744,
+        592
+      ],
+      "id": "a487cb86-8431-4431-b52e-fc2bd399ec9f",
+      "name": "is_interested_by_book"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get or Create Contact in GHL').item.json.id }}",
+        "updateFields": {
+          "tags": "Unqualified : Company not yet created / New company"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        -720
+      ],
+      "id": "7cee4b00-9485-4426-8818-ecca8343397b",
+      "name": "Set unqualified by company tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get or Create Contact in GHL').item.json.id }}",
+        "updateFields": {
+          "tags": "Unqualified : Not interrested by video"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        288
+      ],
+      "id": "ff6d470e-053e-4f93-bc23-7408d89fc84e",
+      "name": "Set unqualified by video tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get or Create Contact in GHL').item.json.id }}",
+        "updateFields": {
+          "tags": "Unqualified : Not interested by booking an appointment"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        688
+      ],
+      "id": "d90ed8ca-47b0-4ed5-9a52-d822c74faa5d",
+      "name": "Set unqualified by book tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Get or Create Contact in GHL').item.json.tags[0] || \"new\" }}",
+                    "rightValue": "new",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "69f448fe-23a8-400d-aabd-eaeab8969cec"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "New"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3166fb6e-2264-40c9-8eae-c3b3aad6316f",
+                    "leftValue": "={{ $('Get or Create Contact in GHL').item.json.tags[0] }}",
+                    "rightValue": "start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Company asked"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f47f1389-78b8-474f-a8f8-0a41c20d0f5c",
+                    "leftValue": "={{ $('Get or Create Contact in GHL').item.json.tags[0] }}",
+                    "rightValue": "company",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Complement asked"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "77eff7b6-839c-4aec-a0c0-d20512138a99",
+                    "leftValue": "={{ $('Get or Create Contact in GHL').item.json.tags[0] }}",
+                    "rightValue": "complement_info",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "analysing_ca"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "549a75df-c9af-41b6-a236-7077ff6dc344",
+                    "leftValue": "={{ $('Get or Create Contact in GHL').item.json.tags[0] }}",
+                    "rightValue": "video",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Check book interessment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "281fba61-1d43-4a06-ab5b-c75190c652d8",
+                    "leftValue": "={{ $('Get or Create Contact in GHL').item.json.tags[0] }}",
+                    "rightValue": "book",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Investment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "52b8b020-32e1-46ff-8109-8c3df746d5a0",
+                    "leftValue": "={{ $('Get or Create Contact in GHL').item.json.tags[0] }}",
+                    "rightValue": "investment",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Booking a slot"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "96bafcf6-6a01-44ec-954f-ba5f0f49889d",
+                    "leftValue": "={{ $('Get or Create Contact in GHL').item.json.tags[0] }}",
+                    "rightValue": "booking_slot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Check avaibility & book"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        992,
+        112
+      ],
+      "id": "e851b24f-56cb-4f71-b644-4c51d2a4a6ee",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get or Create Contact in GHL').item.json.id }}",
+        "updateFields": {
+          "tags": "Unqualified : Not interested by an investment"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        1008
+      ],
+      "id": "0650ea37-16c2-46f2-a74f-8295c5ad78bd",
+      "name": "Set unqualified by ROI tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "operation": "getFreeSlots",
+        "calendarId": "jut4GEP8kanUcMmf0AoK",
+        "startDate": "={{ new Date().plus(3, 'days').setHours(0,0,0,0) }}",
+        "endDate": "=\n{{ new Date().plus(30, 'days').setHours(0,0,0,0) }}",
+        "additionalFields": {
+          "timezone": "Europe/Paris"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        1104
+      ],
+      "id": "0d7afdc5-4a9f-4c81-b092-04ac119512b9",
+      "name": "Get free slots of a calendar",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get or Create Contact in GHL').first().json.id }}",
+        "updateFields": {
+          "tags": "booking_slot"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        3904,
+        1104
+      ],
+      "id": "4b3470ee-6970-490c-a5b2-7b3459051c14",
+      "name": "set booking slot tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Your objective will be to analyse the anwer of the user in order to know if he's interrested to invest in our solution or not.\nIf he's not interrested you must answer \"no\" ONLY. \nIf he's interrested or could be interrested you must answer \"yes\" ONLY.",
+              "role": "model"
+            },
+            {
+              "content": "=Complementary context, do not take care if empty, but prior it if fullfilled : \n- {{ $('Get agent complementary context').item.json.context }}\n- {{ $('Get agent complementary context').item.json.prompt }}",
+              "role": "model"
+            },
+            {
+              "content": "={{ $('Extract message').item.json.text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        1088
+      ],
+      "id": "da5c467a-321c-4471-a50a-c91af4efd6a2",
+      "name": "Analysing investment intention",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Your objective is to find a matching slot based on the availables slots that you have and the user slots. \nYour output should be a JSON with two keys only, the \"date\" and the \"decision\". \nIf the user send you a slot that match the list of available slot then you need to set the \"date\" value to \"YYYY-MM-DDThh:mm:ss\" format (UTC+1) and the \"decision\" to \"slot\". \nIf the user send you a new slot that is not on the list and is after it then I want you to set \"date\" to his slot (on format YYYY-MM-DDThh:mm:ss UTC+1) and \"decision\" to \"new_day\". \nIf the user send you day like Monday, Tuesday, etc... or a date 11, 12, etc... then you have to determine the user meaning and return the \"date\" you determined and the \"decision\" to \"new_day\". \nIf the user send you a slot that is before slots in the list or send you something else than a slot then you need to set \"date\" to null and \"decision\" to \"no_slots\". \n\nNote that if the user don't specify the year that mean it's the current year and the date can only be on the future, not in the past. The current date is `{{ new Date() }}`\nThe given date will always be in UTC+1.",
+              "role": "model"
+            },
+            {
+              "content": "=Available slots :  {{ $('Get slots').first().json.Slots }}",
+              "role": "model"
+            },
+            {
+              "content": "=More context by giving you the previous conversation : {{ JSON.stringify($('Parse conversation1').item.json) }}",
+              "role": "model"
+            },
+            {
+              "content": "=Current user answer :  {{ $('Extract message').first().json.text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        1664
+      ],
+      "id": "362bfc12-a124-4d4d-8738-537d3e29a95e",
+      "name": "Analysing wanted slot",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "operation": "getFreeSlots",
+        "calendarId": "jut4GEP8kanUcMmf0AoK",
+        "startDate": "={{(() => {\n  let date = new Date(JSON.parse($json.content.parts[0].text).date);\n  date.setHours(date.getHours() - 1)\n\n  return date.getTime()\n})()\n}}",
+        "endDate": "={{(() => {\n  let date = new Date(JSON.parse($json.content.parts[0].text).date);\n  date.setUTCHours(date.getHours())\n\n  return date.getTime()\n})()\n}}",
+        "additionalFields": {
+          "timezone": "Europe/Paris"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        1664
+      ],
+      "id": "b0e71e10-3932-4131-9468-b59a3338c287",
+      "name": "check free slots of a calendar",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bdaa77fb-c589-45e6-89f5-3d7d68318e87",
+              "leftValue": "={{ $json.condition }}",
+              "rightValue": "slot",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2800,
+        1664
+      ],
+      "id": "3a8d0b4a-b009-454b-81bd-8c9a171de1ed",
+      "name": "is_not_a_free_slot"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendarId": "jut4GEP8kanUcMmf0AoK",
+        "locationId": "={{ $('Get or Create Contact in GHL').first().json.locationId }}",
+        "contactId": "={{ $('Get or Create Contact in GHL').first().json.id }}",
+        "startTime": "={{ $('Get date slot').first().json.date.slots[0] }}",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        1680
+      ],
+      "id": "ced3b852-ab74-485d-a488-b59369a19412",
+      "name": "Book appointment in a calendar",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -432,
+        208
+      ],
+      "id": "30faebe1-cb72-430f-81a6-51bf9011be21",
+      "name": "Telegram Trigger",
+      "webhookId": "0dfdd489-fd5c-4bc4-848b-77feab22bdbd",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $('Telegram Trigger').all();\nconst result = items.map((item) => {\n  const chatid = item?.json?.message?.chat?.id;\n  const userid = item?.json?.message?.from?.id\n  const firstName = item?.json?.message?.from?.first_name;\n  const lastName = item?.json?.message?.from?.last_name;\n  const text = item?.json?.message?.text;\n  return {chatid, userid, firstName, lastName, text };\n});\nreturn result;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        208
+      ],
+      "id": "a8681b1c-8020-4f68-b136-ef9a60c5a9da",
+      "name": "Extract message"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "259644cb-2e4b-4622-873b-302a8009a363",
+              "name": "tags[0]",
+              "value": "={{ $('Get or Create Contact in GHL').item.json.tags[0] || \"new\"}}",
+              "type": "string"
+            },
+            {
+              "id": "fb98c153-63eb-4315-ac1b-ab7dbc44d8cc",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9215657a-0323-4f74-b121-35a9dd7deb40",
+      "name": "Extract Conversation State",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').item.json.chatid }}",
+        "text": "Bonjour, avez-vous actuellement un business ou cherchez-vous a en lancer un ?",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        -1136
+      ],
+      "id": "ba14c501-9ab0-4e8f-ad59-df21682d0a7e",
+      "name": "asking for company status",
+      "webhookId": "ca49e90b-5644-4471-92fb-83b5521a5766",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').item.json.chatid }}",
+        "text": "=Afin de mieux comprendre votre activité, pourriez-vous me préciser quelle est votre offre principale ou votre service phare ? \nQuel est le profil de votre client idéal ? \nJ’aimerais également savoir comment vous gérez actuellement vos leads et votre processus de prise de rendez-vous, ainsi que votre mode de délivrance : prestation « Done For You » (réalisée pour le client), « Done With You » (accompagnée) ou « Do It Yourself » (autonome).",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1856,
+        -864
+      ],
+      "id": "a3ebdae9-c3d3-44ca-967a-81134757105c",
+      "name": "asking for complementary info",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6295f885-b6ae-4c9c-9bbf-736fdb5f84c6",
+              "name": "tags[0]",
+              "value": "=unqualified",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3424,
+        160
+      ],
+      "id": "3fde33ba-14eb-43aa-ad67-91bb70488eec",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\"videos\": `[\n  {\n    \"id\": \"https://www.youtube.com/watch?v=wFtfx2Pye1g\",\n     \"title\" : \"9 Minutes de PURE valeur pour Scaler son Offre à 100k/mois (2025)\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=_3J7eufogdc\",\n    \"title\": \"POV : Tu Génères 500 Leads par Mois pour ton Agence\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=YUjKgIWf0Ds\",\n    \"title\": \"Le Nouveau Modèle d'Agence qui va EXPLOSER en 2025 (Prépare-toi Dès Maintenant)\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=i3PYP4tX9h8\",\n    \"title\": \"La Méthode EXACTE pour Gagner €50k/Mois comme Coach ou Agence (Même en Partant de Zéro)\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=-p8puS4eRlI\",\n    \"title\": \"La Méthode Rapide pour Ajouter €3K à €5K sur Ton Compte\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=4VkUuUzJ5hM\",\n    \"title\": \"De 0 à €10K/Mois en 2 Mois : Mon Workflow Exact\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=o6WKZ9KVx0M\",\n    \"title\": \"Comment VRAIMENT Développer Ton Business d'Agence en 2025 ?\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=l0ql6mVL38E&pp=0gcJCQMKAYcqIYzv\",\n    \"title\": \"500 DMs Instagram/Jour en Auto avec l’IA – Prospection Automatisée!\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=cfDUkDW00hk\",\n    \"title\": \"Masterclass Gratuite sur l'Acquisition Client (SMMA)\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=-zRRsctQJ5w\",\n    \"title\": \"Générez 10K€ en 7 jours avec le Scaling Inversé\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=2w8tLuDyrfU\",\n    \"title\": \"Comment Obtenir 10 RDV Par Semaine Avec L'IA En 2025 ?\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=bJvwnEmX26w\",\n    \"title\": \"Ne vendez pas des agents IA, vendez plutôt des infrastructures IA (Nouvelle opportunité)\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=W7uUBVB3iec\",\n    \"title\": \"Comment scaler son Agence à 100k/mois avec l'IA (en 2025)\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=MMF7mbBqY8Q\",\n    \"title\": \"Comment Envoyer 2 000 Emails Personnalisés par Jour avec l'IA (Sans Finir en Spam)\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=zM2jDgIJK_k\",\n    \"title\": \"Comment Créer et Vendre une Offre d’IA en 2025 (Étapes + Plan Concret)\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=U5tbSoZWpeg\",\n    \"title\": \"obtenir des clients pour ton agence IA c'est facile\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=9XCsrSI9y2c\",\n    \"title\": \"Le modèle d’agence est MORT en 2025 (fais ça avant qu’il soit trop tard)\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=pFfLpIPkoes\",\n    \"title\": \"Les 4 secrets pour scaler ton Agence IA en 2025\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=r1NYv5LrkBU\",\n    \"title\": \"Comment générer des prospects qualifiés avec des Ads pour ton Agence IA\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=o3Z855cR1Uw\",\n    \"title\": \"De 20k€ à 150k€ en 6 mois avec son Agence (témoignage)\"\n  },\n  {\n    \"id\": \"https://www.youtube.com/watch?v=1G6GYvP8ulM\",\n    \"title\": \"Comment générer 90+ appels qualifiés par mois pour ton Agence IA\"\n  }\n]`}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        208
+      ],
+      "id": "5557167d-23f9-42a1-a2d5-eb1bab481db7",
+      "name": "Youtube Videos"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').item.json.chatid }}",
+        "text": "=Je pense avoir une vidéo qui pourrait vous intéresser, voulez-vous que je vous envoie le lien ?",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1888,
+        -272
+      ],
+      "id": "b5a81b4e-6848-43d8-823a-337989cc7521",
+      "name": "asking for video",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').item.json.chatid }}",
+        "text": "=Malheuresement je n'ai pas de vidéos gratuite qui correspond au levier auquel vous pensez, cependant je peux vous expliquer mon process avant de convenir d'un rendez-vous.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1888,
+        -128
+      ],
+      "id": "a1dbd161-d1f0-4168-8c08-e3acfddb5a55",
+      "name": "no matching video",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').item.json.chatid }}",
+        "text": "=LIEN POUR LE PROCESS (A CONFIGURER PAR LE CLIENT)",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2464,
+        80
+      ],
+      "id": "34cba090-f3ae-4bf6-bd08-71eeeb4090b3",
+      "name": "send_process",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').item.json.chatid }}",
+        "text": "=Voulez-vous réserver une session de scaling avec un des membres de notre équipe ?",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2688,
+        80
+      ],
+      "id": "f1257ba9-669e-4029-a873-9ab86ce1d8dd",
+      "name": "ask_for_booking",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Your objective will be to analyse the anwer of the user in order to know if he's interrested by seing a free video or not.\nIf he's not interrested you must answer \"no\" ONLY. \nIf he's interrested you must answer \"yes\" ONLY.",
+              "role": "model"
+            },
+            {
+              "content": "=Complementary context, do not take care if empty, but prior it if fullfilled : \n- {{ $('Get agent complementary context').item.json.context }}\n- {{ $('Get agent complementary context').item.json.prompt }}",
+              "role": "model"
+            },
+            {
+              "content": "=Answer : {{ $('Extract message').item.json.text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        176
+      ],
+      "id": "db1d448c-9750-4d11-8ea1-cbc6090ebbe1",
+      "name": "Analyse interesment on video",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').item.json.chatid }}",
+        "text": "=Voici la vidéo:\n{{(()=>{ \n  let url = $('Get or Create Contact in GHL').item.json.customFields[1].value.replaceAll('\"', '');\n\n  let base = url.split('=')[0];\n  let video = url.split('=')[1];\n\n  video = encodeURIComponent(video).replace('_', '\\\\_');\n  full_url = base +'='+ video;\n  return full_url;\n})()}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2032,
+        112
+      ],
+      "id": "e3573111-c42a-44ba-abb2-57cc64b9c413",
+      "name": "send video",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Your objective will be to analyse the anwer of the user in order to know if he's interrested to book an appointment or not.\nIf he's not interrested you must answer \"no\" ONLY. \nIf he's interrested you must answer \"yes\" ONLY.",
+              "role": "model"
+            },
+            {
+              "content": "=Complementary context, do not take care if empty, but prior it if fullfilled : \n- {{ $('Get agent complementary context').item.json.context }}\n- {{ $('Get agent complementary context').item.json.prompt }}",
+              "role": "model"
+            },
+            {
+              "content": "=Answer : {{ $('Extract message').item.json.text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        592
+      ],
+      "id": "84919e66-0c94-4a9a-95ce-172743ecfa43",
+      "name": "Analyse interesment on booking",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').item.json.chatid }}",
+        "text": "=Etes-vous disposé à investir (INVESTISSEMENT MINIMUM A DEFINIR PAR LE CLIENT) si le ROI fait sens pour vous ?",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1952,
+        512
+      ],
+      "id": "6babb5c0-7cf6-4a44-8407-9208fa9624b9",
+      "name": "ask for ROI",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "19b014b7-ba96-4eb4-9966-229ea8f6b347",
+              "leftValue": "={{ $json.content.parts[0].text }}",
+              "rightValue": "\"no\"",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1696,
+        1088
+      ],
+      "id": "b008f8f1-3d74-4e26-939d-503f32db29bc",
+      "name": "is_ROI_declined"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').item.json.chatid }}",
+        "text": "={{\n\"Voici mes 30 premieres disponibilités pour un call d'une demi heure :\\n\"\n+ $('Parse date list in string').item.json.formatted_slots_list\n}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3728,
+        1104
+      ],
+      "id": "a19a83d7-095b-42e3-8024-03b2114df9da",
+      "name": "send available slots",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ JSON.parse($json.content.parts[0].text).decision }}",
+                    "rightValue": "new_day",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "78ae799a-0c22-4c8e-b8b1-877b08f3465d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "New search with day"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "89556d6b-1352-409f-837a-b006bcaac01c",
+                    "leftValue": "={{ JSON.parse($json.content.parts[0].text).decision }}",
+                    "rightValue": "slot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Book slot"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3c79dd71-d578-4921-911f-a464f838acf9",
+                    "leftValue": "={{ JSON.parse($json.content.parts[0].text).decision }}",
+                    "rightValue": "no_slots",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Ask for a slot"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        2112,
+        1648
+      ],
+      "id": "c27cdcb0-5e32-468e-b9ce-063cbd076f83",
+      "name": "booking_switch"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "2U8fXP3QcgpA5Jt2",
+          "mode": "list",
+          "cachedResultName": "Available_slots",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/2U8fXP3QcgpA5Jt2"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "User": "={{ $('Get or Create Contact in GHL').first().json.id }}",
+            "Slots": "={{ $json.result.text }}"
+          },
+          "matchingColumns": [
+            "Slots"
+          ],
+          "schema": [
+            {
+              "id": "User",
+              "displayName": "User",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Slots",
+              "displayName": "Slots",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "optimizeBulk": false
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3904,
+        1264
+      ],
+      "id": "763ac01e-ebe1-4da8-92f1-fe26b31b6c85",
+      "name": "Store slots"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "2U8fXP3QcgpA5Jt2",
+          "mode": "list",
+          "cachedResultName": "Available_slots",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/2U8fXP3QcgpA5Jt2"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "User",
+              "keyValue": "={{ $('Get or Create Contact in GHL').item.json.id }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        1664
+      ],
+      "id": "5304ef04-c476-4063-842a-bab97a6a5dc9",
+      "name": "Get slots",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Your objective is to convince the user to chose a slot, if no slots fits his need then you need to ask him to propose one. \nYou have 1 message to convince him, no iteration allowed, so base your answer only in his direct answer. \nAct like if you are in conversation with someone on telegram, you are not in mail feed. \nAlso you have already exchange approximatively 10 messages so do not. \n\nMost important things : \n- Don't tell lady or gentlemen in your message. \n- Try to have a day answer of the user, not a time. \n- Don't say \"Bonjour\" or \"Goodbye\".\n- You have absolutly no right to propose a slot or to validate a slot.\n- You need to convince the user to give you a suitable slot.\n- If the user give you a time where you are not available tell him and ask him to give you a day.\n\nBe kind on your message.\nAlways adopt a formal and professional tone.\nAddress the user formally and politely. Never use casual or overly familiar language.\nNever say that you can change your calendar for the user, you have your own availability and can't change that. \n\nAnswer him in French.",
+              "role": "model"
+            },
+            {
+              "content": "=Complementary context that define you, not the user, do not take care if empty, but prior it if fullfilled: \n- {{ $('Get agent complementary context').first().json.context }}\n- {{ $('Get agent complementary context').first().json.prompt }}",
+              "role": "model"
+            },
+            {
+              "content": "=Available slots :  {{ $('Get slots').first().json.Slots }}",
+              "role": "model"
+            },
+            {
+              "content": "=As context, here is the whole conversation : {{ JSON.stringify($('Parse conversation1').item.json) }}"
+            },
+            {
+              "content": "=Current user answer that you need to convince to take an appointment:  {{ $('Extract message').first().json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        2080
+      ],
+      "id": "ef5ff26a-71f3-49e5-ac31-4b666cd29e5d",
+      "name": "Convince user",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "2U8fXP3QcgpA5Jt2",
+          "mode": "list",
+          "cachedResultName": "Available_slots",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/2U8fXP3QcgpA5Jt2"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "User",
+              "keyValue": "={{ $('Get or Create Contact in GHL').first().json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2304,
+        1520
+      ],
+      "id": "684f435b-99c7-4380-b13f-4e47be01431a",
+      "name": "Delete row(s)",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').first().json.chatid }}",
+        "text": "={{ $json.content.parts[0].text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2608,
+        2080
+      ],
+      "id": "0fedb577-8e7a-4590-b897-be30fb9fa94f",
+      "name": "try to have a slot",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Le Code Node dans n8n reçoit les données dans l'objet 'items'.\n// Nous prenons le premier (et seul) élément du tableau d'entrée.\nconst dataObject = items[0].json;\n\n// Le tableau pour stocker toutes les chaînes de temps (timestamps)\nlet allTimestamps = [];\n\n// Parcourir toutes les paires clé/valeur dans l'objet de données (date et traceId)\nfor (const [key, value] of Object.entries(dataObject)) {\n  // Ignorer les clés qui ne sont pas des dates (comme \"traceId\")\n  if (key !== 'traceId' && value.slots && Array.isArray(value.slots)) {\n    // Ajouter les slots (créneaux) à notre liste principale\n    allTimestamps.push(...value.slots);\n  }\n}\n\n// 2. Formater chaque timestamp dans le format souhaité en utilisant les méthodes UTC.\nconst formattedList = allTimestamps.map((timestamp) => {\n    const date = new Date(timestamp);\n    // --- Time Formatting (HHhMM) ---\n    // 1. Get the UTC hour and apply the CET (UTC+1) offset manually.\n    // We use setHours() to perform the calculation safely, handling day rollovers.\n    // NOTE: We MUST clone the date object here so we don't modify the date used for the date part!\n    const timeDate = new Date(date);\n    \n    // Add the +1 hour offset (CET/GMT+1) to the UTC time for correct CET time.\n    timeDate.setUTCHours(timeDate.getUTCHours() + 1);\n\n    // 2. Extract and format the time parts with zero-padding.\n    let hours = timeDate.getUTCHours().toString().padStart(2, '0');\n    let minutes = timeDate.getUTCMinutes().toString().padStart(2, '0');\n    \n    const timePart = `${hours}h${minutes}`;\n    // Example: 08h00\n\n    // --- Date Formatting (DD/MM/YYYY) ---\n    // Use the original date object and UTC methods to extract the day/month/year.\n    let day = date.getUTCDate().toString().padStart(2, '0');\n    let month = (date.getUTCMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed, so add 1\n    let year = date.getUTCFullYear();\n    \n    const datePart = `${day}/${month}/${year}`;\n    // Example: 10/11/2025\n\n    return `- ${timePart} le ${datePart}`;\n});\n\n// 3. Joindre les éléments du tableau avec un saut de ligne.\nconst finalOutputString = formattedList.splice(0,30).join('\\n');\n\n// Retourner le résultat dans un nouvel item/variable n8n\nreturn [\n    {\n        json: {\n            formatted_slots_list: finalOutputString,\n        },\n    },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        1104
+      ],
+      "id": "df5aa8e6-252f-4aeb-906e-2cb319a9187a",
+      "name": "Parse date list in string"
+    },
+    {
+      "parameters": {
+        "jsCode": "const slots = $input.first().json;\nlet slots_keys = Object.keys(slots);\nslots_keys.splice(slots_keys.indexOf(\"traceId\"),1);\n\nlet date;\nlet condition;\n\nif (slots_keys.length === 0) {\n  date = undefined;\n  condition = \"no_slot\";\n}else{\n  date = slots[slots_keys[0]];\n  condition = \"slot\";\n}\n\nreturn {\"date\" : date, \"condition\":condition}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        1664
+      ],
+      "id": "3a53c394-58f5-4a7c-a459-2a2177c2a66a",
+      "name": "Get date slot"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Your objective is to make a short message to confirm the slot the user suggest by answering to his message. Do not use the exact same words as him if possible to prove that you understood his request.\nAdd a goodbye message a the end.\n\nYou need to answer a text, not a JSON or other formats. Act like if you are in a conversation with someone.\nRemind that it is in UTC+1.\nAnswer him in French.",
+              "role": "model"
+            },
+            {
+              "content": "=Complementary context, do not take care if empty, but prior it if fullfilled : \n- {{ $('Get agent complementary context').first().json.context }}\n- {{ $('Get agent complementary context').first().json.prompt }}",
+              "role": "model"
+            },
+            {
+              "content": "=Booked date is :  {{ $('Get date slot').item.json.date.slots[0] }}",
+              "role": "model"
+            },
+            {
+              "content": "=Message sent by user :  {{ $('Extract message').first().json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        3232,
+        1680
+      ],
+      "id": "c26678c0-bb64-4740-8330-cf5be4380cdf",
+      "name": "Confirm slot",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').first().json.chatid }}",
+        "text": "={{ $json.content.parts[0].text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3552,
+        1680
+      ],
+      "id": "27b458bf-9407-442b-ade5-9e47132f17c7",
+      "name": "send confirmation",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $('Get or Create Contact in GHL').first().json.id }}",
+        "updateFields": {
+          "tags": "end"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        3744,
+        1680
+      ],
+      "id": "c73aab06-22e5-41bf-9d1d-c0ede895b33e",
+      "name": "set end tag",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "operation": "getFreeSlots",
+        "calendarId": "jut4GEP8kanUcMmf0AoK",
+        "startDate": "={{ new Date(JSON.parse($('Analysing wanted slot').first().json.content.parts[0].text).date).getTime()}}",
+        "endDate": "={{ new Date(JSON.parse($('Analysing wanted slot').first().json.content.parts[0].text).date).plus(30, 'days').setHours(0,0,0,0) }}",
+        "additionalFields": {
+          "timezone": "Europe/Paris"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        2512,
+        1520
+      ],
+      "id": "9c84b661-d156-46a8-83d2-3b8fba704643",
+      "name": "Get new slots of a calendar",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Le Code Node dans n8n reçoit les données dans l'objet 'items'.\n// Nous prenons le premier (et seul) élément du tableau d'entrée.\nconst dataObject = items[0].json;\n\n// Le tableau pour stocker toutes les chaînes de temps (timestamps)\nlet allTimestamps = [];\n\n// Parcourir toutes les paires clé/valeur dans l'objet de données (date et traceId)\nfor (const [key, value] of Object.entries(dataObject)) {\n  // Ignorer les clés qui ne sont pas des dates (comme \"traceId\")\n  if (key !== 'traceId' && value.slots && Array.isArray(value.slots)) {\n    // Ajouter les slots (créneaux) à notre liste principale\n    allTimestamps.push(...value.slots);\n  }\n}\n\n// 2. Formater chaque timestamp dans le format souhaité en utilisant les méthodes UTC.\nconst formattedList = allTimestamps.map((timestamp) => {\n    const date = new Date(timestamp);\n    // --- Time Formatting (HHhMM) ---\n    // 1. Get the UTC hour and apply the CET (UTC+1) offset manually.\n    // We use setHours() to perform the calculation safely, handling day rollovers.\n    // NOTE: We MUST clone the date object here so we don't modify the date used for the date part!\n    const timeDate = new Date(date);\n    \n    // Add the +1 hour offset (CET/GMT+1) to the UTC time for correct CET time.\n    timeDate.setUTCHours(timeDate.getUTCHours() + 1);\n\n    // 2. Extract and format the time parts with zero-padding.\n    let hours = timeDate.getUTCHours().toString().padStart(2, '0');\n    let minutes = timeDate.getUTCMinutes().toString().padStart(2, '0');\n    \n    const timePart = `${hours}h${minutes}`;\n    // Example: 08h00\n\n    // --- Date Formatting (DD/MM/YYYY) ---\n    // Use the original date object and UTC methods to extract the day/month/year.\n    let day = date.getUTCDate().toString().padStart(2, '0');\n    let month = (date.getUTCMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed, so add 1\n    let year = date.getUTCFullYear();\n    \n    const datePart = `${day}/${month}/${year}`;\n    // Example: 10/11/2025\n\n    return `- ${timePart} le ${datePart}`;\n});\n\n// 3. Joindre les éléments du tableau avec un saut de ligne.\nconst finalOutputString = formattedList.splice(0,30).join('\\n');\n\n// Retourner le résultat dans un nouvel item/variable n8n\nreturn [\n    {\n        json: {\n            formatted_slots_list: finalOutputString,\n        },\n    },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        1520
+      ],
+      "id": "3db759c2-246b-485f-b09f-d559a1d56860",
+      "name": "Parse date list in string 2"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "The user have asked for a new slot in the calendar. \nYou will have the available slots and the user request. \nMake a short answer to the user based on that. \n\nThe answer should not mention any date, it should say only if you could satisfy his demand by giving him slots on his timestamp or not (if not the next message will be the next available slots).\n\nDate is always in UTC+1.\nAnswer him in French.",
+              "role": "model"
+            },
+            {
+              "content": "=Complementary context, do not take care if empty, but prior it if fullfilled : \n- {{ $('Get agent complementary context').first().json.context }}\n- {{ $('Get agent complementary context').first().json.prompt }}",
+              "role": "model"
+            },
+            {
+              "content": "=Available slots :  {{ $json.formatted_slots_list }}",
+              "role": "model"
+            },
+            {
+              "content": "=Answer :  {{ $('Extract message').first().json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        3008,
+        1520
+      ],
+      "id": "049003de-24bf-44ea-aa72-a83f045a236b",
+      "name": "Analysing new dates",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').first().json.chatid }}",
+        "text": "={{\n$('Analysing new dates').item.json.content.parts[0].text + \"\\n\"\n+ \"Je peux vous proposer ces nouveaux créneaux :\\n\"\n+ $('Parse date list in string 2').item.json.formatted_slots_list\n}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3312,
+        1520
+      ],
+      "id": "f05525ae-3389-4128-8365-fce80d1a8323",
+      "name": "send new available slots",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "2U8fXP3QcgpA5Jt2",
+          "mode": "list",
+          "cachedResultName": "Available_slots",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/2U8fXP3QcgpA5Jt2"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "User",
+              "keyValue": "={{ $('Get or Create Contact in GHL').first().json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3920,
+        1680
+      ],
+      "id": "7d88389f-818c-449b-988c-e38160f333b6",
+      "name": "Delete row(s)1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "UfKrHsQqzRwr4iMo",
+          "mode": "list",
+          "cachedResultName": "strategy_context",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/UfKrHsQqzRwr4iMo"
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        208
+      ],
+      "id": "5723578f-744a-4c02-a1ea-692ab36ade4d",
+      "name": "Get agent complementary context"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $('Extract message').item.json.text }}",
+            "chat_id": "={{ $('Extract message').item.json.chatid }}",
+            "contact_key": "={{ $('Extract message').item.json.userid }}",
+            "direction": "in",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        400,
+        208
+      ],
+      "id": "5ad26fcb-4e64-4e44-9f78-394a04567520",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').item.json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').item.json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $('asking for company status').item.json.result.text }}",
+            "chat_id": "={{ $('Extract message').item.json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        -1136
+      ],
+      "id": "91bf031b-f209-4ed7-99ed-a0284dc1eb5d",
+      "name": "Insert start out"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').item.json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').item.json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $('asking for complementary info').item.json.result.text }}",
+            "chat_id": "={{ $('Extract message').item.json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        -864
+      ],
+      "id": "9d4a93e5-048a-44ea-9967-631b6382b791",
+      "name": "Insert company out"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').item.json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').item.json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $('asking for ca').item.json.result.text }}",
+            "chat_id": "={{ $('Extract message').item.json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2064,
+        -496
+      ],
+      "id": "85f09c3e-8a4a-4484-b34f-af40d726c029",
+      "name": "Insert ca out"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').item.json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').item.json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $('asking for video').item.json.result.text }}",
+            "chat_id": "={{ $('Extract message').item.json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        -272
+      ],
+      "id": "c7e50114-7337-4d0f-a6e1-67a69e7557a8",
+      "name": "Insert video out"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').item.json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').item.json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $('send_process').item.json.result.text }}\n{{ $('ask_for_booking').item.json.result.text }}",
+            "chat_id": "={{ $('Extract message').item.json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3088,
+        80
+      ],
+      "id": "c334ab0a-8060-42fb-8a3b-932c7961649a",
+      "name": "Insert book out"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').item.json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').item.json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $('ask for ROI').item.json.result.text }}",
+            "chat_id": "={{ $('Extract message').item.json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2336,
+        512
+      ],
+      "id": "0dd7661f-7bc2-42ab-92fd-068d26e3b714",
+      "name": "Insert investment out"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').first().json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').first().json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $json.result.text }}",
+            "chat_id": "={{ $('Extract message').first().json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3904,
+        960
+      ],
+      "id": "b06f65db-847c-47e4-94ca-91892420a150",
+      "name": "Insert slot proposal"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').first().json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').first().json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $json.result.text }}",
+            "chat_id": "={{ $('Extract message').first().json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3664,
+        1520
+      ],
+      "id": "811b88d4-190c-44f0-9027-6f6966653f0d",
+      "name": "Insert new slot proposal"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').first().json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').first().json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $json.result.text }}",
+            "chat_id": "={{ $('Extract message').first().json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3744,
+        1824
+      ],
+      "id": "fbf8749a-59f6-4c8d-b61e-d769980fbf77",
+      "name": "Insert confirm slot proposal"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').first().json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').first().json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $json.result.text }}",
+            "chat_id": "={{ $('Extract message').first().json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2752,
+        2080
+      ],
+      "id": "34ab1281-a7ed-4f48-a7b2-6afcbb7afcff",
+      "name": "Insert convince user"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "contactId": "={{ $('Get or Create Contact in GHL').item.json.id }}",
+        "requestOptions": {}
+      },
+      "id": "09c61846-83e8-47c3-b003-8fdc4e024789",
+      "name": "Get unqualification tag",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        3616,
+        160
+      ],
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Get or Create Contact in GHL').item.json.fullNameLowerCase || 'Inconnu'}}",
+            "email": "={{ $('Get or Create Contact in GHL').item.json.email }}",
+            "phone": "{{''}}",
+            "message": "={{ $json.tags[0] }}",
+            "chat_id": "={{ $('Extract message').item.json.chatid }}",
+            "contact_key": "bot",
+            "direction": "out",
+            "source": "telegram"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3824,
+        160
+      ],
+      "id": "ab38bbe1-6352-433b-a264-feb68c7166d3",
+      "name": "Insert unqualification"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $('Extract message').item.json.chatid }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        4032,
+        160
+      ],
+      "id": "01e856de-7372-4061-9655-0abb589ccac7",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const conv = {\"name\": [], \"message\": [], \"direction\": [], \"createdAt\": []};\n\nfor (const item of $input.all()) {\n  item.json.contact_key = item.json.contact_key != \"bot\" ? \"user\" : item.json.contact_key;\n  conv.name.push(item.json.contact_key)\n  conv.message.push(item.json.message)\n  conv.direction.push(item.json.direction)\n  conv.createdAt.push(item.json.createdAt)\n}\n\nreturn conv"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4240,
+        160
+      ],
+      "id": "86fbd2fc-bf48-4161-a35a-b250abbf0796",
+      "name": "Parse conversation"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Your objective is to make a polite message to the \"use\"r that tell him that you will contact him later (in a delay of 3days). Make your answer based on the conversation I sent you after. \nIn the given conversation you are the \"bot\", the user that you will answer to is the \"user\". \nInform the user that sending message will not lead to an answers from now (be kind and polite).\n\nYou need to answer a text, not a JSON or other formats. Act like if you are in a conversation with someone.\n\nThe last answer of the bot (you) is the reason of why the user is unqualified, it could help you to formulate your answer. \nThe objective of your answer is to make the user wait for your call. \nAnswer him in French.",
+              "role": "model"
+            },
+            {
+              "content": "=Conversation : {{JSON.stringify($json)}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        4432,
+        160
+      ],
+      "id": "4a1e7b22-5139-4fc5-8d3f-4ffe3eef4389",
+      "name": "End conversation",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "task",
+        "contactId": "={{ $('Get or Create Contact in GHL').first().json.id }}",
+        "title": "=Contact {{ $('Get or Create Contact in GHL').first().json.fullNameLowerCase }}",
+        "dueDate": "={{ $now.plus(3, 'days').toFormat('yyyy-MM-dd\\'T\\'HH:mm:ss') }}",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        4912,
+        160
+      ],
+      "id": "533ee449-6e62-4ab3-a82a-13cb904d027f",
+      "name": "Create a task",
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "xx27xpmVKMmD3oTD",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').first().json.chatid }}",
+        "text": "={{ $json.content.parts[0].text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4736,
+        160
+      ],
+      "id": "f6d8e2b8-9efa-4e74-82db-963549b0321a",
+      "name": "Send final message",
+      "webhookId": "30db9b64-df96-4f40-bf2d-a852e503b5dc",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Trigger & Global settings\n",
+        "height": 496,
+        "width": 1488,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -544,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "acb002d6-957f-47c2-be15-cb00f04fb22c",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Conversation initialisation\n",
+        "height": 288,
+        "width": 1888
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1328,
+        -1216
+      ],
+      "typeVersion": 1,
+      "id": "980c112c-adf3-4e66-ad06-30c6ec123456",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## First qualification (eligibility)\n",
+        "height": 320,
+        "width": 1888
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1328,
+        -896
+      ],
+      "typeVersion": 1,
+      "id": "ca4182a6-bd1c-430f-babb-1debac3b76ac",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Updating contact note",
+        "height": 224,
+        "width": 1904
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1328,
+        -544
+      ],
+      "typeVersion": 1,
+      "id": "55545707-4cc1-4905-8e44-48b5dfa16a9a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract message').item.json.chatid }}",
+        "text": "=Si vous ne deviez actionner qu'un seul levier\npour améliorer votre chiffre d'affaires, lequel\nchoisiriez-vous ?",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1680,
+        -496
+      ],
+      "id": "682ec4e0-e8d9-4709-99ca-d2af117bc104",
+      "name": "asking for ca",
+      "webhookId": "d9fc893b-8482-4051-b6f4-549d3849dce1",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Proposition of free video",
+        "height": 336,
+        "width": 1904
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1328,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "e2492444-2230-4a2a-8bfd-ac082c7c2a9f",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Second qualification (interest on product)",
+        "height": 400,
+        "width": 1904
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1328,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "51a8b737-9f16-4b7d-a019-32232c2380ea",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Third qualification (availability / time investment)",
+        "height": 400,
+        "width": 1904
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1328,
+        480
+      ],
+      "typeVersion": 1,
+      "id": "3a3b850a-7ddc-47be-82a0-eda179a5abd0",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Fourth qualification (money investment)",
+        "height": 496,
+        "width": 1744
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1328,
+        912
+      ],
+      "typeVersion": 1,
+      "id": "7b34e551-ff20-4c6a-af5c-a3311f419007",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "## Global slot booking process",
+        "height": 496,
+        "width": 1072
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3104,
+        912
+      ],
+      "typeVersion": 1,
+      "id": "31164619-7c31-41dc-83fd-bd58feeefafa",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "## Slot booking process logic",
+        "height": 560,
+        "width": 2816
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1328,
+        1424
+      ],
+      "typeVersion": 1,
+      "id": "facbca13-d39c-4a6f-8273-d8282bcfd891",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "## Emotional persuasion bias",
+        "height": 320,
+        "width": 1008,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2112,
+        2000
+      ],
+      "typeVersion": 1,
+      "id": "450a5ab8-2850-4945-9bc3-d50008b782d6",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "## Unqualified process",
+        "height": 336,
+        "width": 1776,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3344,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "9a2ac9e9-1c61-4bd7-8574-df0187873e00",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "jsCode": "const conv = {\"name\": [], \"message\": [], \"direction\": [], \"createdAt\": []};\n\nfor (const item of $input.all()) {\n  item.json.contact_key = item.json.contact_key != \"bot\" ? \"user\" : item.json.contact_key;\n  conv.name.push(item.json.contact_key)\n  conv.message.push(item.json.message)\n  conv.direction.push(item.json.direction)\n  conv.createdAt.push(item.json.createdAt)\n}\n\nreturn conv"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        1664
+      ],
+      "id": "d23e966a-c70c-4176-8f93-0a6eb3698d97",
+      "name": "Parse conversation1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $('Extract message').item.json.chatid }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        1664
+      ],
+      "id": "1c64e303-722a-471b-af4f-ce17111272c5",
+      "name": "Get conv"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get or Create Contact in GHL": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analysing compagny state": {
+      "main": [
+        [
+          {
+            "node": "is_qualified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is_qualified": {
+      "main": [
+        [
+          {
+            "node": "asking for complementary info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set unqualified by company tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analysing complementary info": {
+      "main": [
+        [
+          {
+            "node": "asking for ca",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is_matching": {
+      "main": [
+        [
+          {
+            "node": "asking for video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "no matching video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set company tag": {
+      "main": [
+        [
+          {
+            "node": "Insert company out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set start tag": {
+      "main": [
+        [
+          {
+            "node": "Insert start out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set complement_info tag": {
+      "main": [
+        [
+          {
+            "node": "Insert ca out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if a video match the need": {
+      "main": [
+        [
+          {
+            "node": "is_matching",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is_interested_by_video": {
+      "main": [
+        [
+          {
+            "node": "send video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set unqualified by video tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is_interested_by_book": {
+      "main": [
+        [
+          {
+            "node": "ask for ROI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set unqualified by book tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "asking for company status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analysing compagny state",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analysing complementary info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check if a video match the need",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyse interesment on video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyse interesment on booking",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analysing investment intention",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get free slots of a calendar": {
+      "main": [
+        [
+          {
+            "node": "Parse date list in string",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analysing investment intention": {
+      "main": [
+        [
+          {
+            "node": "is_ROI_declined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analysing wanted slot": {
+      "main": [
+        [
+          {
+            "node": "booking_switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check free slots of a calendar": {
+      "main": [
+        [
+          {
+            "node": "Get date slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is_not_a_free_slot": {
+      "main": [
+        [
+          {
+            "node": "Get free slots of a calendar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Book appointment in a calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book appointment in a calendar": {
+      "main": [
+        [
+          {
+            "node": "Confirm slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get agent complementary context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract message": {
+      "main": [
+        [
+          {
+            "node": "Get or Create Contact in GHL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Conversation State": {
+      "main": [
+        [
+          {
+            "node": "Youtube Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "asking for company status": {
+      "main": [
+        [
+          {
+            "node": "Set start tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "asking for complementary info": {
+      "main": [
+        [
+          {
+            "node": "Set company tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set unqualified by company tag": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get unqualification tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set unqualified by video tag": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set unqualified by book tag": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set unqualified by ROI tag": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Youtube Videos": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "asking for video": {
+      "main": [
+        [
+          {
+            "node": "set video tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "no matching video": {
+      "main": [
+        [
+          {
+            "node": "send_process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send_process": {
+      "main": [
+        [
+          {
+            "node": "ask_for_booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ask_for_booking": {
+      "main": [
+        [
+          {
+            "node": "set book tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyse interesment on video": {
+      "main": [
+        [
+          {
+            "node": "is_interested_by_video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send video": {
+      "main": [
+        [
+          {
+            "node": "send_process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyse interesment on booking": {
+      "main": [
+        [
+          {
+            "node": "is_interested_by_book",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ask for ROI": {
+      "main": [
+        [
+          {
+            "node": "set investment tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is_ROI_declined": {
+      "main": [
+        [
+          {
+            "node": "Set unqualified by ROI tag",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get free slots of a calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send available slots": {
+      "main": [
+        [
+          {
+            "node": "set booking slot tag",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Store slots",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert slot proposal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "booking_switch": {
+      "main": [
+        [
+          {
+            "node": "Delete row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "check free slots of a calendar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convince user",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get slots": {
+      "main": [
+        [
+          {
+            "node": "Get conv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete row(s)": {
+      "main": [
+        [
+          {
+            "node": "Get new slots of a calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convince user": {
+      "main": [
+        [
+          {
+            "node": "try to have a slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse date list in string": {
+      "main": [
+        [
+          {
+            "node": "send available slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get date slot": {
+      "main": [
+        [
+          {
+            "node": "is_not_a_free_slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm slot": {
+      "main": [
+        [
+          {
+            "node": "send confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send confirmation": {
+      "main": [
+        [
+          {
+            "node": "set end tag",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert confirm slot proposal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get new slots of a calendar": {
+      "main": [
+        [
+          {
+            "node": "Parse date list in string 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse date list in string 2": {
+      "main": [
+        [
+          {
+            "node": "Analysing new dates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analysing new dates": {
+      "main": [
+        [
+          {
+            "node": "send new available slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send new available slots": {
+      "main": [
+        [
+          {
+            "node": "set booking slot tag",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Store slots",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert new slot proposal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set end tag": {
+      "main": [
+        [
+          {
+            "node": "Delete row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get agent complementary context": {
+      "main": [
+        [
+          {
+            "node": "Extract message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Extract Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set video tag": {
+      "main": [
+        [
+          {
+            "node": "Insert video out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set book tag": {
+      "main": [
+        [
+          {
+            "node": "Insert book out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set investment tag": {
+      "main": [
+        [
+          {
+            "node": "Insert investment out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set booking slot tag": {
+      "main": [
+        []
+      ]
+    },
+    "try to have a slot": {
+      "main": [
+        [
+          {
+            "node": "Insert convince user",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get unqualification tag": {
+      "main": [
+        [
+          {
+            "node": "Insert unqualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert unqualification": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Parse conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse conversation": {
+      "main": [
+        [
+          {
+            "node": "End conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "End conversation": {
+      "main": [
+        [
+          {
+            "node": "Send final message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send final message": {
+      "main": [
+        [
+          {
+            "node": "Create a task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "asking for ca": {
+      "main": [
+        [
+          {
+            "node": "set complement_info tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse conversation1": {
+      "main": [
+        [
+          {
+            "node": "Analysing wanted slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get conv": {
+      "main": [
+        [
+          {
+            "node": "Parse conversation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "17683a75-e73a-45d3-8190-97f749fd1f2d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0067a3bc1de5e3409a491bae2bb493b63bc5fbde7c77e0c1119abf42da5afeca"
+  },
+  "id": "YsMddlqLzFw5MEOk",
+  "tags": []
+}

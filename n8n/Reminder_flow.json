@@ -1,0 +1,328 @@
+{
+  "name": "Relance 3 jours (LLM + Telegram + Data Tables)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "id": "f729fecf-fdf7-4592-b54b-fbb0e42833b2",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "returnAll": true
+      },
+      "id": "1a5acff1-6680-43af-ac7e-d9a180ce2033",
+      "name": "Get row(s)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// The n8n Code node receives the input data in the 'items' array.\n// We map the input items to an array of just the JSON objects.\nconst messages = $input.all().map(item => item.json);\n\n/**\n * Filters conversations to find user names and chat IDs that need a reminder.\n *\n * @param {Array<Object>} messages - The list of message objects.\n * @returns {Array<Object>} - An array of items containing unique {name, chat_id} objects suitable for n8n output.\n */\nfunction findReminderCandidates(messages) {\n    // Current time reference. Set this to a constant or use a preceding\n    // Date & Time node to ensure consistent time comparison during the flow.\n    const NOW = new Date(); \n    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000; // Original value\n    //const THREE_DAYS_MS = 1 * 1000; // Using 1 sec for testing, as in your code.\n    \n    // Use an object to store candidates, keyed by chat_id, to ensure only one reminder per conversation\n    const reminderCandidates = {}; \n    \n    // 1. Group messages by chat_id\n    const conversations = messages.reduce((acc, message) => {\n        const chatId = message.chat_id;\n        if (!acc[chatId]) {\n            acc[chatId] = [];\n        }\n        acc[chatId].push(message);\n        return acc;\n    }, {});\n\n    // 2. Process each conversation\n    for (const chatId in conversations) {\n        let conversation = conversations[chatId];\n\n        // IMPORTANT: Sort by createdAt to ensure the \"last\" message is accurate.\n        conversation.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());\n\n        const lastMessage = conversation[conversation.length - 1];\n\n        // --- Rule 1: Check for Bot Disqualification (Ignore) ---\n        if (lastMessage.contact_key === 'bot' && lastMessage.message.toLowerCase().includes('unqualified')) {\n            continue;\n        }\n\n        // --- Rule 2: Reminder Trigger - Last message older than 3 days? ---\n        const lastMessageDate = new Date(lastMessage.createdAt);\n        const isOlderThan3Days = NOW.getTime() - lastMessageDate.getTime() > THREE_DAYS_MS;\n        \n        if (!isOlderThan3Days) {\n            continue;\n        }\n\n        // --- Rule 3: Agent Check - Are the 3 last messages from AgentIA? ---\n        let agentCount = 0;\n        let isThirdConsecutiveAgent = false;\n        \n        for (let i = conversation.length - 1; i >= 0 && i >= conversation.length - 3; i--) {\n            if (conversation[i].name === 'AgentIA') { \n                agentCount++;\n                if (agentCount === 3) {\n                    isThirdConsecutiveAgent = true;\n                    break;\n                }\n            } else {\n                agentCount = 0; \n            }\n        }\n\n        // Reminder condition met: Last message is old (Rule 2 is true)\n        // AND it's NOT the 3rd consecutive message of \"AgentIA\" (Rule 3 is false)\n        if (!isThirdConsecutiveAgent) {\n            \n            // --- Logic to find the User's Name and Chat ID ---\n            let userName = null;\n            let conversationId = null; // Will store the chat_id\n            \n            // Iterate backward to find the first message with a valid user name/key\n            for (let i = conversation.length - 1; i >= 0; i--) {\n                const currentMessage = conversation[i];\n                const key = currentMessage.contact_key;\n                \n                // Criteria for a user message: has a name, key is not 'bot'/'AgentIA', and not null/empty\n                if (currentMessage.name && key !== 'bot' && key !== 'AgentIA' && key !== null && key !== \"\") {\n                    userName = currentMessage.name;\n                    conversationId = currentMessage.chat_id; // Retrieve the chat_id from this valid user message\n                    break; \n                }\n            }\n\n            if (userName && conversationId) {\n                // Store the result using the chat_id as the unique key\n                reminderCandidates[conversationId] = {\n                    name: userName,\n                    chat_id: conversationId\n                };\n            }\n        }\n    }\n\n    // --- Final Output Formatting for n8n ---\n    // Convert the values of the candidates object into an array of n8n output items\n    const finalResults = Object.values(reminderCandidates);\n    \n    return finalResults.map(item => ({\n        json: {\n            name: item.name,\n            chat_id: item.chat_id\n        }\n    }));\n}\n\n// Execute the function and return the n8n-compatible array\nreturn findReminderCandidates(messages);"
+      },
+      "id": "e87e13f9-22dd-454c-bf7f-301ca0e8b25d",
+      "name": "Pick 3-day no-reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Contexte: l'utilisateur n'a pas répondu depuis 3 jours à ton dernier message, tu dois le relancer.\nNom de l'utilisateur: \"{{ $json.name || 'vous' }}\".\nCanal: Telegram.\nExigences: <= 280 caractères, empathique, clair. Répondre directement à l'utilisateur, pas de variable à modifier avant envoi. Utilise le vouvoiement. N'utilise que son prénom si tu es sur à 100% que c'est bien son prénom. Sinon n'utilise ni son nom ni son prénom dans ton message afin d'éviter tout soucis.\nRéponds uniquement avec {\"text\":\"...\"}."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "systemMessage": "Tu écris des relances B2B concises en français. Réponds STRICTEMENT en JSON valide: {\"text\":\"...\"} — pas d'autre contenu.",
+          "temperature": 0.4
+        }
+      },
+      "id": "94579491-3825-4d01-9ca9-9aa342ba1399",
+      "name": "Google Gemini",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0t1DRDyrqhvGKqCh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// --------- Récupération & parsing robuste du JSON Gemini pour UN seul élément ---------\nfunction extractTextFromGemini(payload) {\n  // 1) Chemin standard pour extraire la chaîne JSON textuelle\n  let raw = payload?.content?.parts?.[0]?.text ?? \"\";\n\n  if (typeof raw !== \"string\") return \"\";\n\n  // 2) Tenter un JSON.parse pour récupérer l'objet interne {\"text\": \"...\"}\n  try {\n    const obj = JSON.parse(raw);\n    if (obj && typeof obj === \"object\" && obj.text) {\n      return String(obj.text).trim();\n    }\n  } catch (e) {\n    // Si la chaîne n'est pas un JSON valide (ou ne contient pas \"text\"), on ignore\n  }\n\n  // 3) Fallback: Si la chaîne raw n'est pas un JSON valide, ou si on n'a pas trouvé \"text\"\n  return \"\";\n}\n\n// Conserver le contexte venant de la fonction précédente\n// $json est l'array des réponses Gemini\nconst gemini_responses = $(\"Google Gemini\").all();\n\n// On suppose que la variable 'ctx' est un array d'objets contexte,\n// correspondant un-à-un aux réponses dans gemini_responses.\n// Ex: ctx = [\n//   {name: \"cyril teisseire\", chat_id: \"8290283793\", ...},\n//   {name: \"mathieu undefined\", chat_id: \"6314034278\", ...}\n// ];\nconst ctx_array = $(\"Pick 3-day no-reply\").all();\n\n// Tableau pour stocker les sorties unifiées\nconst output_array = [];\n\n// Itérer sur les réponses Gemini et les contextes\nfor (let i = 0; i < gemini_responses.length; i++) {\n  const gemini_response = gemini_responses[i];\n  const context = ctx_array[i]; // Utiliser le contexte correspondant (par index)\n\n  // Extraire le message, avec un fallback si l'extraction échoue\n  const extracted_text = extractTextFromGemini(gemini_response);\n  const text_to_send = extracted_text || \"Bonjour, je me permets une petite relance 🙂. Souhaitez-vous qu’on cale 15 min cette semaine ?\";\n\n  // Ajouter un nouvel item au tableau de sortie\n  if (context) {\n    output_array.push({\n      json: {\n        ...context, // => chat_id, contact_key, name, etc.\n        text_to_send: text_to_send // => pour Telegram + log\n      }\n    });\n  }\n}\n\n// Renvoyer le tableau complet des items\nreturn output_array;"
+      },
+      "id": "7d5d46b1-c0c4-4f90-9995-3898bce37633",
+      "name": "Parse LLM JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.json.chat_id }}",
+        "text": "={{ $json.text_to_send }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "30e4db15-9250-48a2-bd1b-c3b5fa23689a",
+      "name": "Telegram Send Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        0
+      ],
+      "webhookId": "63c89c00-b1ca-490f-941c-b22f6b1ad7f3",
+      "credentials": {
+        "telegramApi": {
+          "id": "IC93mnlBQkmrWjYo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "GBNJTCmqs6E9OY65",
+          "mode": "list",
+          "cachedResultName": "sales_table",
+          "cachedResultUrl": "/projects/bORCQJefBYbaPQo2/datatables/GBNJTCmqs6E9OY65"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "AgentIA",
+            "message": "={{ $json.result.text }}",
+            "source": "telegram",
+            "direction": "out",
+            "chat_id": "={{ $json.result.chat.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_key",
+              "displayName": "contact_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b0abc8b7-cbd1-4f22-b9f9-a6c41511b29b",
+      "name": "Insert row (log OUT)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Pick 3-day no-reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick 3-day no-reply": {
+      "main": [
+        [
+          {
+            "node": "Google Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM JSON": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send Message": {
+      "main": [
+        [
+          {
+            "node": "Insert row (log OUT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a38797e0-2846-41c8-b1d8-2f6041c03395",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0067a3bc1de5e3409a491bae2bb493b63bc5fbde7c77e0c1119abf42da5afeca"
+  },
+  "id": "t1hpQA9rbRH7R3zW",
+  "tags": []
+}
