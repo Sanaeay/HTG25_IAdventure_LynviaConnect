@@ -1,0 +1,109 @@
+# =============================================================================
+# 🔧 App / Build
+# =============================================================================
+# Environnement Vercel: development | preview | production
+VERCEL_ENV=development
+
+# Nom public de l’app (affiché dans l’UI)
+NEXT_PUBLIC_APP_NAME=Lynvia Connect
+
+# Origines autorisées (CORS) — liste séparée par des virgules
+ALLOWED_ORIGINS=https://lynvia-connect.vercel.app,http://localhost:3000
+
+# URL de base des webhooks (n8n Cloud ou self-host)
+NEXT_PUBLIC_N8N_WEBHOOK_BASE=https://<ton-espace>.app.n8n.cloud/webhook
+# Exemple self-host derrière reverse proxy:
+# NEXT_PUBLIC_N8N_WEBHOOK_BASE=https://automations.mondomaine.com/webhook
+
+# =============================================================================
+# 🔐 Sécurité / Signatures / Auth
+# =============================================================================
+# Secret HMAC partagé entre le Front et n8n pour signer/vérifier les payloads.
+# ⚠️ Doit être IDENTIQUE côté n8n (voir N8N_WEBHOOK_HMAC_SECRET ci-dessous).
+SECRET_WEBHOOK=replace_with_a_long_random_string
+
+# (optionnel) Basic Auth sur le webhook via reverse proxy (nginx/traefik)
+WEBHOOK_BASIC_AUTH_USER=lynn
+WEBHOOK_BASIC_AUTH_PASS=replace_with_strong_password
+
+# JSON taille max acceptée (Back/Frontend) en octets (ex: 1MB)
+MAX_JSON_BODY_BYTES=1048576
+
+# Niveau de logs: error | warn | info | debug
+LOG_LEVEL=info
+
+# =============================================================================
+# 🌐 Routes Webhook (doivent correspondre à tes nœuds n8n)
+# =============================================================================
+# Vérification WhatsApp (GET) + Réception WhatsApp (POST)
+WEBHOOK_VERIFY_GET_PATH=whatsapp/verify
+WEBHOOK_INBOUND_POST_PATH=whatsapp/inbound
+
+# Workflows “métier”
+WEBHOOK_RESUME_JOURNEE_PATH=resume-journee
+WEBHOOK_RELANCE_CLIENT_PATH=relance-client
+WEBHOOK_QUALIFICATION_LEAD_PATH=qualification-lead
+
+# =============================================================================
+# 🤖 LLMs / IA
+# =============================================================================
+# openai | openrouter | google (Gemini)
+LLM_PROVIDER=openai
+
+# OpenAI
+OPENAI_API_KEY=sk-replace_me
+OPENAI_ORG_ID=
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_TIMEOUT_MS=60000
+OPENAI_MAX_TOKENS=2000
+
+# OpenRouter (si tu choisis LLM_PROVIDER=openrouter)
+OPENROUTER_API_KEY=or-replace_me
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
+
+# Google Gemini (si LLM_PROVIDER=google)
+GEMINI_API_KEY=replace_me
+GEMINI_MODEL=gemini-2.0-flash
+
+# =============================================================================
+# 🔊 Voix & Audio (ElevenLabs)
+# =============================================================================
+ELEVENLABS_API_KEY=eleven-replace_me
+ELEVENLABS_VOICE_ID= UgBBYS2sOqTuMpoF3BR0
+
+# Planification de résumés audio quotidiens (cron style, gérés côté n8n)
+DAILY_AUDIO_SUMMARY_CRON=0 8 * * *   # 08:00 Europe/Paris
+
+# =============================================================================
+# 💬 Canaux externes (ex: WhatsApp, Telegram)
+# =============================================================================
+# Possibilité d'utiliser Meta / WhatsApp Business API
+META_VERIFY_TOKEN=TokenIAdventure
+META_APP_SECRET=replace_me
+META_ACCESS_TOKEN=EAAG-replace_me
+WHATSAPP_PHONE_NUMBER_ID=123456789012345
+META_WEBHOOK_BASE=https://<ton-espace>.app.n8n.cloud/webhook
+META_WEBHOOK_VERIFY_PATH=whatsapp/verify
+META_WEBHOOK_INBOUND_PATH=whatsapp/inbound
+
+# Telegram (si tu réponds dessus)
+TELEGRAM_BOT_TOKEN=123456:ABC-xyz
+TELEGRAM_CHAT_ID_MAIN=000000000
+
+# =============================================================================
+# 🧰 CRM & Intégrations
+# =============================================================================
+# GoHighLevel / HighLevel (GHL)
+GHL_API_KEY=ghl-replace_me
+GHL_Client_ID=replace_me
+GHL_Client_Secret=replace_me
+GHL_BASE_URL=https://rest.gohighlevel.com/v1
+
+# =============================================================================
+# 🔑 Auth (V2) — si tu ajoutes une session/JWT côté app
+# =============================================================================
+JWT_SECRET=replace_with_long_random_string
+SESSION_SECRET=replace_with_even_longer_random_string
+
